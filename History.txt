@@ -1,0 +1,13 @@
+YM2203 revision history
+-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+V0.0.2 - 2021-04-16 (FluBBa)
+	Something makes sound.
+	Timer counts.
+
+V0.0.1 - 2016-09-31 (FluBBa)
+	First version released.
+
+V0.0.0 - 2016-09-07 (FluBBa)
+	Started coding.

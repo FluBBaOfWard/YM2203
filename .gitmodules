@@ -1,0 +1,3 @@
+[submodule "AY38910"]
+	path = AY38910
+	url = https://github.com/FluBBaOfWard/AY38910.git

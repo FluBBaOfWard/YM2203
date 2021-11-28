@@ -14,8 +14,7 @@ typedef struct {
 
 } YM2203;
 
-
-void ym2203Reset(int chiptype, YM2203 *chip);
+void ym2203Reset(void *irqFunc, YM2203 *chip);
 void ym2203Mixer(int len, void *dest, YM2203 *chip);
 void ym2203IndexW(u8 value, YM2203 *chip);
 void ym2203DataW(u8 value, YM2203 *chip);

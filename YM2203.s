@@ -121,6 +121,7 @@ ym2203Reset:				;@ r0=IRQ(timerIrqFunc)
 	str r0,[ymptr,#ymCh0DetunePtr]
 	str r0,[ymptr,#ymCh1DetunePtr]
 	str r0,[ymptr,#ymCh2DetunePtr]
+	mov r0,ymptr
 	b ay38910Reset
 ;@----------------------------------------------------------------------------
 dummyFunc:
@@ -130,6 +131,7 @@ dummyFunc:
 ym2203IndexW:
 	strb r0,[ymptr,#ymRegIndex]
 	tst r0,#0xF0
+	moveq r1,ymptr
 	beq ay38910IndexW
 //	ldrb r1,[ymptr,#ymStatus]
 //	orr r1,r1,#0x80
@@ -139,6 +141,7 @@ ym2203IndexW:
 ym2203DataW:
 	ldrb r1,[ymptr,#ymRegIndex]
 	tst r1,#0xF0
+	moveq r1,ymptr
 	beq ay38910DataW
 //	ldrb r2,[ymptr,#ymStatus]
 //	orr r2,r2,#0x80
@@ -551,6 +554,7 @@ ym2203StatusR:
 ym2203DataR:
 	ldrb r1,[ymptr,#ymRegIndex]
 	tst r1,#0xF0
+	moveq r0,ymptr
 	beq ay38910DataR
 	mov r0,#0xFF
 //	add r0,ymptr,#ymRegisters

@@ -2,8 +2,8 @@ YM2203 revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-
 
 
-V0.0.3 - 2021-11-28 (FluBBa)
-	Updated AY38910 core.
+V0.0.3 - 2021-12-03 (FluBBa)
+	Updated AY38910 core with working envelope handling.
 
 V0.0.2 - 2021-04-16 (FluBBa)
 	Something makes sound.

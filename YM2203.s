@@ -23,72 +23,74 @@
 #endif
 	.align 2
 ;@----------------------------------------------------------------------------
-ym2203Mixer:				;@ r0=len, r1=dest, ymptr=r12=pointer to struct
+ym2203Mixer:				;@ r0=len, r1=dest, ymptr=r2=pointer to struct
+	.type   ym2203Mixer STT_FUNC
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r4-r11,lr}
 
-	ldr r2,=sinusTable
-	ldr r3,[ymptr,#ymCh0Op0Counter]
-	ldr r4,[ymptr,#ymCh1Op0Counter]
-	ldr r5,[ymptr,#ymCh2Op0Counter]
-	ldr r6,[ymptr,#ymCh0Op3Frequency]
-	ldr r7,[ymptr,#ymCh1Op3Frequency]
-	ldr r8,[ymptr,#ymCh2Op3Frequency]
-	ldr lr,[ymptr,#ymCh0Enable]
+	ldr r12,=sinusTable
+	ldr r3,[r2,#ymCh0Op0Counter]
+	ldr r4,[r2,#ymCh1Op0Counter]
+	ldr r5,[r2,#ymCh2Op0Counter]
+	ldr r6,[r2,#ymCh0Op3Frequency]
+	ldr r7,[r2,#ymCh1Op3Frequency]
+	ldr r8,[r2,#ymCh2Op3Frequency]
+	ldr lr,[r2,#ymCh0Enable]
 mixerLoop:
 	mov r9,r3,lsr#22
 	add r3,r3,r6,lsl#12
 	ands r11,lr,#0x00000F
-	ldrne r11,[r2,r9,lsl#2]
+	ldrne r11,[r12,r9,lsl#2]
 	mov r9,r4,lsr#22
 	add r4,r4,r7,lsl#12
 	tst lr,#0x000F00
-	ldrne r10,[r2,r9,lsl#2]
+	ldrne r10,[r12,r9,lsl#2]
 	addne r11,r11,r10
 	mov r9,r5,lsr#22
 	add r5,r5,r8,lsl#12
 	tst lr,#0x0F0000
-	ldrne r10,[r2,r9,lsl#2]
+	ldrne r10,[r12,r9,lsl#2]
 	addne r11,r11,r10
 	mov r11,r11,lsl#4
 	strh r11,[r1],#2
 	subs r0,r0,#1
 	bhi mixerLoop
 
-	str r3,[ymptr,#ymCh0Op0Counter]
-	str r4,[ymptr,#ymCh1Op0Counter]
-	str r5,[ymptr,#ymCh2Op0Counter]
+	str r3,[r2,#ymCh0Op0Counter]
+	str r4,[r2,#ymCh1Op0Counter]
+	str r5,[r2,#ymCh2Op0Counter]
 
 	ldmfd sp!,{r4-r11,lr}
 	bx lr
 
 ;@----------------------------------------------------------------------------
-ym2203Run:				;@ r0=cycles, ymptr=r12=pointer to struct
+ym2203Run:					;@ r0=cycles, ymptr=r1=pointer to struct
+	.type   ym2203Run STT_FUNC
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r4,lr}
 	mov r4,#0
-	ldrb r1,[ymptr,#ymRegisters+0x27]
-	tst r1,#0x01			;@ Timer A enabled
+	ldrb r12,[r1,#ymRegisters+0x27]
+	tst r12,#0x01				;@ Timer A enabled
 	beq chkTmrB
-	ldr r2,[ymptr,#ymTimerA]
+	ldr r2,[r1,#ymTimerA]
 	subs r2,r2,r0
-	str r2,[ymptr,#ymTimerA]
+	str r2,[r1,#ymTimerA]
 	orrcc r4,r4,#0x01
 chkTmrB:
-	tst r1,#0x02			;@ Timer B enabled
+	tst r12,#0x02				;@ Timer B enabled
 	beq endTmrs
-	ldr r2,[ymptr,#ymTimerB]
+	ldr r2,[r1,#ymTimerB]
 	subs r2,r2,r0
-	str r2,[ymptr,#ymTimerB]
+	str r2,[r1,#ymTimerB]
 	orrcc r4,r4,#0x02
 endTmrs:
-	ands r4,r4,r1,lsr#2		;@ Have any timers expired
-	ldrbne r2,[ymptr,#ymStatus]
+	ands r4,r4,r12,lsr#2		;@ Have any timers expired
+	ldrbne r2,[r1,#ymStatus]
 	orrne r2,r2,r4
-	strbne r2,[ymptr,#ymStatus]
+	strbne r2,[r1,#ymStatus]
 	movne r0,#1
 	movne lr,pc
-	ldrne pc,[ymptr,#ymTimerIrqFunc]
+	ldrne pc,[r1,#ymTimerIrqFunc]
 
 	ldmfd sp!,{r4,lr}
 	bx lr
@@ -98,59 +100,76 @@ endTmrs:
 	.section .text
 	.align 2
 ;@----------------------------------------------------------------------------
-ym2203Reset:				;@ r0=IRQ(timerIrqFunc)
+ym2203Reset:				;@ r0=ymptr, r1=IRQ(timerIrqFunc)
+	.type   ym2203Reset STT_FUNC
 ;@----------------------------------------------------------------------------
-	cmp r0,#0
-	adreq r0,dummyFunc
-	str r0,[ymptr,#ymTimerIrqFunc]
-	mov r0,#0
-	strb r0,[ymptr,#ymRegIndex]
-	str r0,[ymptr,#ymCh0Op0Counter]
-	str r0,[ymptr,#ymCh0Op1Counter]
-	str r0,[ymptr,#ymCh0Op2Counter]
-	str r0,[ymptr,#ymCh0Op3Counter]
-	str r0,[ymptr,#ymCh1Op0Counter]
-	str r0,[ymptr,#ymCh1Op1Counter]
-	str r0,[ymptr,#ymCh1Op2Counter]
-	str r0,[ymptr,#ymCh1Op3Counter]
-	str r0,[ymptr,#ymCh2Op0Counter]
-	str r0,[ymptr,#ymCh2Op1Counter]
-	str r0,[ymptr,#ymCh2Op2Counter]
-	str r0,[ymptr,#ymCh2Op3Counter]
-	ldr r0,=detuneAdjustment
-	str r0,[ymptr,#ymCh0DetunePtr]
-	str r0,[ymptr,#ymCh1DetunePtr]
-	str r0,[ymptr,#ymCh2DetunePtr]
-	mov r0,ymptr
+
+	mov r3,#0
+	mov r2,#ymSize/4			;@ Clear YM2203 state
+rLoop:
+	subs r2,r2,#1
+	strpl r3,[r0,r2,lsl#2]
+	bhi rLoop
+
+	cmp r1,#0
+	adreq r1,dummyFunc
+	str r1,[r0,#ymTimerIrqFunc]
+	ldr r1,=detuneAdjustment
+	str r1,[r0,#ymCh0DetunePtr]
+	str r1,[r0,#ymCh1DetunePtr]
+	str r1,[r0,#ymCh2DetunePtr]
 	b ay38910Reset
 ;@----------------------------------------------------------------------------
 dummyFunc:
 	bx lr
 
 ;@----------------------------------------------------------------------------
-ym2203IndexW:
-	strb r0,[ymptr,#ymRegIndex]
-	tst r0,#0xF0
-	moveq r1,ymptr
-	beq ay38910IndexW
-//	ldrb r1,[ymptr,#ymStatus]
-//	orr r1,r1,#0x80
-//	strb r1,[ymptr,#ymStatus]
+ym2203StatusR:
+	.type   ym2203StatusR STT_FUNC
+;@----------------------------------------------------------------------------
+	mov r11,r11
+	ldrb r2,[r0,#ymStatus]
+	bic r1,r2,#0x80
+	strb r1,[r0,#ymStatus]
+	mov r0,r2
 	bx lr
 ;@----------------------------------------------------------------------------
-ym2203DataW:
-	ldrb r1,[ymptr,#ymRegIndex]
+ym2203DataR:
+	.type   ym2203DataR STT_FUNC
+;@----------------------------------------------------------------------------
+	ldrb r1,[r0,#ymRegIndex]
 	tst r1,#0xF0
-	moveq r1,ymptr
-	beq ay38910DataW
-//	ldrb r2,[ymptr,#ymStatus]
+	beq ay38910DataR
+	mov r0,#0xFF
+//	add r0,r0,#ymRegisters
+//	ldrb r0,[r0,r1]
+	bx lr
+;@----------------------------------------------------------------------------
+ym2203IndexW:				;@ r0=val, r1=ymptr
+	.type   ym2203IndexW STT_FUNC
+;@----------------------------------------------------------------------------
+	strb r0,[r1,#ymRegIndex]
+	tst r0,#0xF0
+	beq ay38910IndexW
+//	ldrb r2,[r0,#ymStatus]
 //	orr r2,r2,#0x80
-//	strb r2,[ymptr,#ymStatus]
+//	strb r2,[r0,#ymStatus]
+	bx lr
+;@----------------------------------------------------------------------------
+ym2203DataW:				;@ r0=val, r1=ymptr
+	.type   ym2203DataW STT_FUNC
+;@----------------------------------------------------------------------------
+	ldrb r2,[r1,#ymRegIndex]
+	tst r2,#0xF0
+	beq ay38910DataW
+//	ldrb r12,[r1,#ymStatus]
+//	orr r12,r12,#0x80
+//	strb r12,[r1,#ymStatus]
 	mov r11,r11
-	add r2,ymptr,#ymRegisters
-	strb r0,[r2,r1]
-	cmp r1,#0xB3
-	ldrmi pc,[pc,r1,lsl#2]
+	add r12,r1,#ymRegisters
+	strb r0,[r12,r2]
+	cmp r2,#0xB3
+	ldrmi pc,[pc,r2,lsl#2]
 	bx lr
 //0x00
 	.long NOT_IMPLEMENTED
@@ -349,53 +368,53 @@ ym2203DataW:
 ymTimerControl:			;@ 0x27
 ;@----------------------------------------------------------------------------
 	tst r0,#0x01			;@ Load timer A
-	ldrbne r1,[ymptr,#ymRegisters+0x24]
-	ldrbne r2,[ymptr,#ymRegisters+0x25]
+	ldrbne r12,[r1,#ymRegisters+0x24]
+	ldrbne r2,[r1,#ymRegisters+0x25]
 	andne r2,r2,#0x03
-	orrne r1,r2,r1,lsl#2
-	rsbne r1,r1,#0x400
-	addne r1,r1,r1,lsl#3	;@ * 72 (* 9)
-	movne r1,r1,lsl#3		;@ (* 8)
-	strne r1,[ymptr,#ymTimerA]
+	orrne r12,r2,r12,lsl#2
+	rsbne r12,r12,#0x400
+	addne r12,r12,r12,lsl#3	;@ * 72 (* 9)
+	movne r12,r12,lsl#3		;@ (* 8)
+	strne r12,[r1,#ymTimerA]
 
 	tst r0,#0x02			;@ Load timer B
-	ldrbne r1,[ymptr,#ymRegisters+0x26]
-	rsbne r1,r1,#0x100
-	addne r1,r1,r1,lsl#3	;@ * 72 (* 9)
-	movne r1,r1,lsl#3+4		;@ (* 8) * 16
-	strne r1,[ymptr,#ymTimerB]
+	ldrbne r12,[r1,#ymRegisters+0x26]
+	rsbne r12,r12,#0x100
+	addne r12,r12,r12,lsl#3	;@ * 72 (* 9)
+	movne r12,r12,lsl#3+4		;@ (* 8) * 16
+	strne r12,[r1,#ymTimerB]
 
 	ands r0,#0x30
-	ldrbne r1,[ymptr,#ymStatus]
-	bicne r1,r1,r0,lsr#4
-	strbne r1,[ymptr,#ymStatus]
+	ldrbne r12,[r1,#ymStatus]
+	bicne r12,r12,r0,lsr#4
+	strbne r12,[r1,#ymStatus]
 
 	bx lr
 
 ;@----------------------------------------------------------------------------
 ymSetChannelEnable:		;@ 0x28
 ;@----------------------------------------------------------------------------
-	add r2,ymptr,#ymCh0Enable
-	mov r1,r0,lsr#4				;@ Operators enabled
+	add r2,r1,#ymCh0Enable
+	mov r12,r0,lsr#4				;@ Operators enabled
 	and r0,r0,#0x3				;@ Which channel
-	strb r1,[r2,r0]
+	strb r12,[r2,r0]
 	bx lr
 ;@----------------------------------------------------------------------------
 ymSetCh0OpDetune:		;@ 0x30, 0x34, 0x38, 0x3C
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r3}
-	ldr r2,[ymptr,#ymCh0DetunePtr]
+	ldr r2,[r1,#ymCh0DetunePtr]
 	movs r3,r0,lsl#26
 	ldrb r2,[r2,r3,lsr#30]
 	rsbcs r2,r2,#0
-	ldr r3,[ymptr,#ymCh0Frequency]
+	ldr r3,[r1,#ymCh0Frequency]
 	add r2,r3,r2
 	ands r0,r0,#0xF
 	moveq r2,r2,lsr#1
 	mulne r2,r0,r2
-	and r1,r1,#0x0C
-	add r1,r1,#ymCh0Op0Frequency
-	str r2,[ymptr,r1]
+	and r12,r12,#0x0C
+	add r12,r12,#ymCh0Op0Frequency
+	str r2,[r1,r12]
 
 	ldmfd sp!,{r3}
 	bx lr
@@ -403,18 +422,18 @@ ymSetCh0OpDetune:		;@ 0x30, 0x34, 0x38, 0x3C
 ymSetCh1OpDetune:		;@ 0x31, 0x35, 0x39, 0x3D
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r3}
-	ldr r2,[ymptr,#ymCh1DetunePtr]
+	ldr r2,[r1,#ymCh1DetunePtr]
 	movs r3,r0,lsl#26
 	ldrb r2,[r2,r3,lsr#30]
 	rsbcs r2,r2,#0
-	ldr r3,[ymptr,#ymCh1Frequency]
+	ldr r3,[r1,#ymCh1Frequency]
 	add r2,r3,r2
 	ands r0,r0,#0xF
 	moveq r2,r2,lsr#1
 	mulne r2,r0,r2
-	and r1,r1,#0x0C
-	add r1,r1,#ymCh1Op0Frequency
-	str r2,[ymptr,r1]
+	and r12,r12,#0x0C
+	add r12,r12,#ymCh1Op0Frequency
+	str r2,[r1,r12]
 
 	ldmfd sp!,{r3}
 	bx lr
@@ -422,18 +441,18 @@ ymSetCh1OpDetune:		;@ 0x31, 0x35, 0x39, 0x3D
 ymSetCh2OpDetune:		;@ 0x32, 0x36, 0x3A, 0x3E
 ;@----------------------------------------------------------------------------
 	stmfd sp!,{r3}
-	ldr r2,[ymptr,#ymCh2DetunePtr]
+	ldr r2,[r1,#ymCh2DetunePtr]
 	movs r3,r0,lsl#26
 	ldrb r2,[r2,r3,lsr#30]
 	rsbcs r2,r2,#0
-	ldr r3,[ymptr,#ymCh2Frequency]
+	ldr r3,[r1,#ymCh2Frequency]
 	add r2,r3,r2
 	ands r0,r0,#0xF
 	moveq r2,r2,lsr#1
 	mulne r2,r0,r2
-	and r1,r1,#0x0C
-	add r1,r1,#ymCh2Op0Frequency
-	str r2,[ymptr,r1]
+	and r12,r12,#0x0C
+	add r12,r12,#ymCh2Op0Frequency
+	str r2,[r1,r12]
 
 	ldmfd sp!,{r3}
 	bx lr
@@ -441,31 +460,31 @@ ymSetCh2OpDetune:		;@ 0x32, 0x36, 0x3A, 0x3E
 ;@----------------------------------------------------------------------------
 ymCh0SetFreq:			;@ 0xA0
 ;@----------------------------------------------------------------------------
-	ldrb r1,[ymptr,#ymRegisters+0xA4]
-	and r2,r1,#0x7
+	ldrb r12,[r1,#ymRegisters+0xA4]
+	and r2,r12,#0x7
 	orr r0,r0,r2,lsl#8
-	mov r1,r1,lsr#3
-	and r1,r1,#7
-	mov r2,r0,lsl r1
+	mov r12,r12,lsr#3
+	and r12,r12,#7
+	mov r2,r0,lsl r12
 	mov r2,r2,lsr#1
-	str r2,[ymptr,#ymCh0Frequency]
+	str r2,[r1,#ymCh0Frequency]
 	and r2,r0,#0x780
 	cmp r2,#0x400
-	orrpl r1,r1,#0x80000000		;@ N4
-	orrhi r1,r1,#0x40000000		;@ N3
+	orrpl r12,r12,#0x80000000		;@ N4
+	orrhi r12,r12,#0x40000000		;@ N3
 	cmp r2,#0x380
-	orreq r1,r1,#0x40000000		;@ N3
-	mov r1,r1,ror#30
+	orreq r12,r12,#0x40000000		;@ N3
+	mov r12,r12,ror#30
 	adr r2,detuneAdjustment
-	add r2,r2,r1,lsl#2
-	str r2,[ymptr,#ymCh0DetunePtr]
+	add r2,r2,r12,lsl#2
+	str r2,[r1,#ymCh0DetunePtr]
 
 	stmfd sp!,{r3,lr}
 	mov r3,#0x30
 ym0DeLoop:
-	mov r1,r3
-	add r2,ymptr,#ymRegisters
-	ldrb r0,[r2,r1]
+	mov r12,r3
+	add r2,r1,#ymRegisters
+	ldrb r0,[r2,r12]
 	bl ymSetCh0OpDetune
 	add r3,r3,#4
 	cmp r3,#0x40
@@ -476,31 +495,31 @@ ym0DeLoop:
 ;@----------------------------------------------------------------------------
 ymCh1SetFreq:			;@ 0xA1
 ;@----------------------------------------------------------------------------
-	ldrb r1,[ymptr,#ymRegisters+0xA5]
-	and r2,r1,#0x7
+	ldrb r12,[r1,#ymRegisters+0xA5]
+	and r2,r12,#0x7
 	orr r0,r0,r2,lsl#8
-	mov r1,r1,lsr#3
-	and r1,r1,#7
-	mov r2,r0,lsl r1
+	mov r12,r12,lsr#3
+	and r12,r12,#7
+	mov r2,r0,lsl r12
 	mov r2,r2,lsr#1
-	str r2,[ymptr,#ymCh1Frequency]
+	str r2,[r1,#ymCh1Frequency]
 	and r2,r0,#0x780
 	cmp r2,#0x400
-	orrpl r1,r1,#0x80000000		;@ N4
-	orrhi r1,r1,#0x40000000		;@ N3
+	orrpl r12,r12,#0x80000000		;@ N4
+	orrhi r12,r12,#0x40000000		;@ N3
 	cmp r2,#0x380
-	orreq r1,r1,#0x40000000		;@ N3
-	mov r1,r1,ror#30
+	orreq r12,r12,#0x40000000		;@ N3
+	mov r12,r12,ror#30
 	adr r2,detuneAdjustment
-	add r2,r2,r1,lsl#2
-	str r2,[ymptr,#ymCh1DetunePtr]
+	add r2,r2,r12,lsl#2
+	str r2,[r1,#ymCh1DetunePtr]
 
 	stmfd sp!,{r3,lr}
 	mov r3,#0x31
 ym1DeLoop:
-	mov r1,r3
-	add r2,ymptr,#ymRegisters
-	ldrb r0,[r2,r1]
+	mov r12,r3
+	add r2,r1,#ymRegisters
+	ldrb r0,[r2,r12]
 	bl ymSetCh1OpDetune
 	add r3,r3,#4
 	cmp r3,#0x40
@@ -511,54 +530,37 @@ ym1DeLoop:
 ;@----------------------------------------------------------------------------
 ymCh2SetFreq:			;@ 0xA2
 ;@----------------------------------------------------------------------------
-	ldrb r1,[ymptr,#ymRegisters+0xA6]
-	and r2,r1,#0x7
+	ldrb r12,[r1,#ymRegisters+0xA6]
+	and r2,r12,#0x7
 	orr r0,r0,r2,lsl#8
-	mov r1,r1,lsr#3
-	and r1,r1,#7
-	mov r0,r0,lsl r1
+	mov r12,r12,lsr#3
+	and r12,r12,#7
+	mov r0,r0,lsl r12
 	mov r0,r0,lsr#1
-	str r0,[ymptr,#ymCh2Frequency]
+	str r0,[r1,#ymCh2Frequency]
 	and r2,r0,#0x780
 	cmp r2,#0x400
-	orrpl r1,r1,#0x80000000		;@ N4
-	orrhi r1,r1,#0x40000000		;@ N3
+	orrpl r12,r12,#0x80000000		;@ N4
+	orrhi r12,r12,#0x40000000		;@ N3
 	cmp r2,#0x380
-	orreq r1,r1,#0x40000000		;@ N3
-	mov r1,r1,ror#30
+	orreq r12,r12,#0x40000000		;@ N3
+	mov r12,r12,ror#30
 	adr r2,detuneAdjustment
-	add r2,r2,r1,lsl#2
-	str r2,[ymptr,#ymCh2DetunePtr]
+	add r2,r2,r12,lsl#2
+	str r2,[r1,#ymCh2DetunePtr]
 
 	stmfd sp!,{r3,lr}
 	mov r3,#0x32
 ym2DeLoop:
-	mov r1,r3
-	add r2,ymptr,#ymRegisters
-	ldrb r0,[r2,r1]
+	mov r12,r3
+	add r2,r1,#ymRegisters
+	ldrb r0,[r2,r12]
 	bl ymSetCh2OpDetune
 	add r3,r3,#4
 	cmp r3,#0x40
 	bmi ym2DeLoop
 
 	ldmfd sp!,{r3,lr}
-	bx lr
-;@----------------------------------------------------------------------------
-ym2203StatusR:
-	mov r11,r11
-	ldrb r0,[ymptr,#ymStatus]
-	bic r1,r0,#0x80
-	strb r1,[ymptr,#ymStatus]
-	bx lr
-;@----------------------------------------------------------------------------
-ym2203DataR:
-	ldrb r1,[ymptr,#ymRegIndex]
-	tst r1,#0xF0
-	moveq r0,ymptr
-	beq ay38910DataR
-	mov r0,#0xFF
-//	add r0,ymptr,#ymRegisters
-//	ldrb r0,[r0,r1]
 	bx lr
 ;@----------------------------------------------------------------------------
 

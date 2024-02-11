@@ -3,7 +3,9 @@
 
 #include "AY38910/AY38910.i"
 
-	ymptr			.req r12
+#if !__ASSEMBLER__
+	#error This header file is only for use in assembly files!
+#endif
 
 							;@ YM2203.s
 	.struct 0

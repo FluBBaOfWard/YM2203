@@ -2,6 +2,10 @@ YM2203 revision history
 -=-=-=-=-=-=-=-=-=-=-=-=-
 
 
+V0.0.5 - 2024-02-18 (FluBBa)
+	Updated AY38910 core.
+	Refactored all functions to work from C.
+
 V0.0.3 - 2021-12-03 (FluBBa)
 	Updated AY38910 core with working envelope handling.
 

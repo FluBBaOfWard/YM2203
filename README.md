@@ -13,12 +13,14 @@ Produces signed 16bit mono.
 * <https://github.com/FluBBaOfWard/BlackTigerDS>
 * <https://github.com/FluBBaOfWard/DoubleDribbleDS>
 * <https://github.com/FluBBaOfWard/GhostsNGoblinsDS>
-* <https://github.com/FluBBaOfWard/IronHorseDS>
+* <https://github.com/FluBBaOfWard/K80DS>
 
 ## Credits
 
 Fredrik Ahlström
 
-X/Twitter @TheRealFluBBa
+<https://bsky.app/profile/therealflubba.bsky.social>
 
 <https://www.github.com/FluBBaOfWard>
+
+X/Twitter @TheRealFluBBa

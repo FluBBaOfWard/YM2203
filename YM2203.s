@@ -15,7 +15,7 @@
 	.arm
 
 #ifdef NDS
-	.section .itcm						;@ For the NDS
+	.section .itcm, "ax", %progbits		;@ For the NDS
 #elif GBA
 	.section .iwram, "ax", %progbits	;@ For the GBA
 #else
